@@ -49,6 +49,8 @@ h2 { font-size: 0.95rem; margin: 16px 0 8px; color: #9aa4b2; text-transform: upp
   cursor: pointer;
 }
 .search-result:hover { background: #232a34; }
+.search-result.muted { opacity: 0.6; cursor: default; }
+.search-result.muted:hover { background: #1c222b; }
 
 #location-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 #location-list li {

@@ -1,5 +1,5 @@
 const OSRM_BASE = 'https://router.project-osrm.org';
-const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+const PHOTON_BASE = 'https://photon.komoot.io/api/';
 const EXACT_CAP = 13; // Held-Karp beyond this gets slow; heuristic wins by default.
 
 const state = {
@@ -113,37 +113,67 @@ map.on('click', (e) => {
   addLocation(e.latlng.lat, e.latlng.lng);
 });
 
-searchForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const q = searchInput.value.trim();
-  if (!q) return;
-  searchResultsEl.innerHTML = 'Buscando…';
+function labelForFeature(props) {
+  const streetPart = props.housenumber && props.street ? `${props.street} ${props.housenumber}` : props.street;
+  const main = props.name || streetPart;
+  const locality = [props.city || props.town || props.village, props.state, props.country].filter(Boolean);
+  if (main && locality.length) return `${main} — ${locality.join(', ')}`;
+  return main || locality.join(', ') || 'Ubicación';
+}
+
+function renderSearchResults(features) {
+  searchResultsEl.innerHTML = '';
+  if (!features.length) {
+    searchResultsEl.innerHTML = '<div class="search-result muted">Sin resultados</div>';
+    return;
+  }
+  features.forEach((f) => {
+    const [lng, lat] = f.geometry.coordinates;
+    const label = labelForFeature(f.properties || {});
+    const div = document.createElement('div');
+    div.className = 'search-result';
+    div.textContent = label;
+    div.addEventListener('click', () => {
+      addLocation(lat, lng, label);
+      map.setView([lat, lng], 15);
+      searchResultsEl.innerHTML = '';
+      searchInput.value = '';
+    });
+    searchResultsEl.appendChild(div);
+  });
+}
+
+async function runSearch(q) {
+  searchResultsEl.innerHTML = '<div class="search-result muted">Buscando…</div>';
   try {
-    const url = `${NOMINATIM_BASE}/search?format=json&limit=5&q=${encodeURIComponent(q)}`;
+    const center = map.getCenter();
+    // lat/lon bias results toward whatever part of the map the user is looking at,
+    // closer to how Maps infers intent from your current viewport.
+    const url = `${PHOTON_BASE}?q=${encodeURIComponent(q)}&lat=${center.lat}&lon=${center.lng}&limit=6`;
     const res = await fetch(url);
     const data = await res.json();
-    searchResultsEl.innerHTML = '';
-    if (!data.length) {
-      searchResultsEl.innerHTML = '<div class="search-result">Sin resultados</div>';
-      return;
-    }
-    data.forEach((item) => {
-      const div = document.createElement('div');
-      div.className = 'search-result';
-      div.textContent = item.display_name;
-      div.addEventListener('click', () => {
-        const lat = parseFloat(item.lat);
-        const lng = parseFloat(item.lon);
-        addLocation(lat, lng, item.display_name.split(',').slice(0, 2).join(','));
-        map.setView([lat, lng], 15);
-        searchResultsEl.innerHTML = '';
-        searchInput.value = '';
-      });
-      searchResultsEl.appendChild(div);
-    });
+    renderSearchResults(data.features || []);
   } catch (err) {
-    searchResultsEl.innerHTML = '<div class="search-result">Error al buscar</div>';
+    searchResultsEl.innerHTML = '<div class="search-result muted">Error al buscar</div>';
   }
+}
+
+let searchDebounceTimer = null;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchDebounceTimer);
+  const q = searchInput.value.trim();
+  if (q.length < 3) {
+    searchResultsEl.innerHTML = '';
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => runSearch(q), 300);
+});
+
+searchForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  clearTimeout(searchDebounceTimer);
+  const q = searchInput.value.trim();
+  if (q) runSearch(q);
 });
 
 async function fetchDurationMatrix(locations) {
