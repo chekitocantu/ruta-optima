@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruta más rápida</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>Ruta más rápida</h1>
+    <p class="hint">Busca una dirección o haz clic en el mapa para agregar paradas. El primer punto es tu inicio (y regreso).</p>
+
+    <form id="search-form">
+      <input id="search-input" type="text" placeholder="Buscar dirección..." autocomplete="off" />
+      <button type="submit">Buscar</button>
+    </form>
+    <div id="search-results"></div>
+
+    <ol id="location-list"></ol>
+
+    <button id="calc-btn" disabled>Calcular ruta más rápida</button>
+    <button id="clear-btn" class="secondary">Borrar todo</button>
+
+    <div id="status"></div>
+
+    <div id="race-panel" class="hidden">
+      <h2>Carrera de algoritmos</h2>
+      <div class="race-row" id="race-exact">
+        <span class="algo-name">Exacto (Held-Karp)</span>
+        <span class="algo-time">—</span>
+      </div>
+      <div class="race-row" id="race-heuristic">
+        <span class="algo-name">Heurístico (vecino cercano + 2-opt)</span>
+        <span class="algo-time">—</span>
+      </div>
+    </div>
+
+    <div id="result-panel" class="hidden">
+      <h2>Resultado</h2>
+      <p id="result-summary"></p>
+      <ol id="result-order"></ol>
+    </div>
+  </aside>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
